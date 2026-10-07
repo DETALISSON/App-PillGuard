@@ -709,10 +709,294 @@ button{
     font-size:24px;
   }
 }
+
+
+/* =========================================================
+   ALERTAS PILLGUARD — SEM ALERT() DO NAVEGADOR
+========================================================= */
+
+.pg-dialog-bg{
+  position:fixed;
+  inset:0;
+  background:rgba(10,22,40,.58);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  z-index:99999;
+}
+
+.pg-dialog-bg.show{
+  display:flex;
+  animation:pgFadeIn .18s ease;
+}
+
+.pg-dialog{
+  width:100%;
+  max-width:370px;
+  background:#fff;
+  border-radius:26px;
+  padding:25px 22px 20px;
+  text-align:center;
+  box-shadow:0 22px 60px rgba(0,0,0,.28);
+  animation:pgDialogIn .2s ease;
+}
+
+.pg-dialog-icon{
+  width:62px;
+  height:62px;
+  margin:0 auto 13px;
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#eaf7fd;
+  font-size:31px;
+}
+
+.pg-dialog-title{
+  color:#142238;
+  font-size:21px;
+  font-weight:850;
+  margin-bottom:8px;
+}
+
+.pg-dialog-message{
+  color:#68778b;
+  font-size:15px;
+  line-height:1.55;
+  white-space:pre-line;
+}
+
+.pg-dialog-actions{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:9px;
+  margin-top:20px;
+}
+
+.pg-dialog-actions.two{
+  grid-template-columns:1fr 1fr;
+}
+
+.pg-dialog-btn{
+  border:0;
+  border-radius:14px;
+  padding:14px 12px;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.pg-dialog-btn.primary{
+  background:var(--blue);
+  color:#fff;
+}
+
+.pg-dialog-btn.secondary{
+  background:#edf2f7;
+  color:#59687b;
+}
+
+@keyframes pgFadeIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+@keyframes pgDialogIn{
+  from{transform:translateY(8px) scale(.96);opacity:0}
+  to{transform:translateY(0) scale(1);opacity:1}
+}
+
+
+
+/* =========================================================
+   TELA DE LOGIN / CRIAR CONTA
+========================================================= */
+.pg-auth{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  background:linear-gradient(160deg,#071427 0%,#0d2d49 52%,#0793cf 160%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  overflow:auto;
+}
+.pg-auth.hidden{display:none}
+.pg-auth-card{
+  width:100%;
+  max-width:430px;
+  background:#fff;
+  border-radius:30px;
+  padding:30px 24px 24px;
+  box-shadow:0 25px 80px rgba(0,0,0,.32);
+}
+.pg-auth-logo{
+  text-align:center;
+  font-size:35px;
+  font-weight:900;
+  color:#182238;
+  margin-bottom:7px;
+}
+.pg-auth-logo span{color:#0793cf}
+.pg-auth-subtitle{
+  text-align:center;
+  color:#758197;
+  margin-bottom:25px;
+  line-height:1.45;
+}
+.pg-auth-title{
+  font-size:25px;
+  font-weight:850;
+  color:#182238;
+  margin-bottom:7px;
+}
+.pg-auth-desc{
+  color:#758197;
+  font-size:14px;
+  margin-bottom:18px;
+}
+.pg-auth-field{margin-bottom:13px}
+.pg-auth-field label{
+  display:block;
+  font-size:14px;
+  font-weight:800;
+  margin-bottom:7px;
+  color:#182238;
+}
+.pg-auth-field input{
+  width:100%;
+  border:1px solid #dce3ec;
+  border-radius:15px;
+  padding:14px;
+  outline:none;
+  background:#f8fafc;
+}
+.pg-auth-field input:focus{
+  border-color:#0793cf;
+  box-shadow:0 0 0 3px rgba(7,147,207,.12);
+}
+.pg-auth-btn{
+  width:100%;
+  padding:15px;
+  border-radius:15px;
+  background:#0793cf;
+  color:#fff;
+  font-weight:850;
+  margin-top:5px;
+}
+.pg-auth-btn.secondary{
+  background:#eef3f8;
+  color:#1b2a40;
+  margin-top:10px;
+}
+.pg-auth-switch{
+  text-align:center;
+  margin-top:17px;
+  color:#758197;
+  font-size:14px;
+}
+.pg-auth-switch button{
+  background:none;
+  color:#087fb4;
+  font-weight:850;
+  margin-left:4px;
+}
+.pg-auth-error{
+  display:none;
+  background:#fff0f1;
+  color:#c02e38;
+  border:1px solid #ffd0d3;
+  border-radius:13px;
+  padding:11px 12px;
+  font-size:13px;
+  line-height:1.4;
+  margin-bottom:13px;
+}
+.pg-auth-error.show{display:block}
+.pg-logout-btn{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border-radius:14px;
+  background:#fff0f1;
+  color:#c02e38;
+  font-weight:850;
+}
+
 </style>
 </head>
 
 <body>
+
+
+<!-- TELA DE LOGIN / CRIAR CONTA -->
+<div class="pg-auth" id="pgAuth">
+  <div class="pg-auth-card">
+    <div class="pg-auth-logo">Pill<span>Guard</span></div>
+    <div class="pg-auth-subtitle">Seu organizador inteligente de medicamentos</div>
+
+    <div id="pgLoginView">
+      <div class="pg-auth-title">Entrar</div>
+      <div class="pg-auth-desc">Entre na sua conta para acessar seus medicamentos.</div>
+      <div class="pg-auth-error" id="pgLoginError"></div>
+
+      <div class="pg-auth-field">
+        <label>E-mail</label>
+        <input id="pgLoginEmail" type="email" autocomplete="username" placeholder="seu@email.com">
+      </div>
+      <div class="pg-auth-field">
+        <label>Senha</label>
+        <input id="pgLoginPassword" type="password" autocomplete="current-password" placeholder="Sua senha">
+      </div>
+      <button class="pg-auth-btn" type="button" onclick="pgLogin()">Entrar</button>
+      <div class="pg-auth-switch">Ainda não tem conta?
+        <button type="button" onclick="pgShowRegister()">Criar conta</button>
+      </div>
+    </div>
+
+    <div id="pgRegisterView" style="display:none">
+      <div class="pg-auth-title">Criar conta</div>
+      <div class="pg-auth-desc">Cadastre seus dados para começar a usar o PillGuard.</div>
+      <div class="pg-auth-error" id="pgRegisterError"></div>
+
+      <div class="pg-auth-field">
+        <label>Nome</label>
+        <input id="pgRegisterName" type="text" autocomplete="name" placeholder="Seu nome">
+      </div>
+      <div class="pg-auth-field">
+        <label>E-mail</label>
+        <input id="pgRegisterEmail" type="email" autocomplete="email" placeholder="seu@email.com">
+      </div>
+      <div class="pg-auth-field">
+        <label>Senha</label>
+        <input id="pgRegisterPassword" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres">
+      </div>
+      <div class="pg-auth-field">
+        <label>Confirmar senha</label>
+        <input id="pgRegisterPassword2" type="password" autocomplete="new-password" placeholder="Repita sua senha">
+      </div>
+      <button class="pg-auth-btn" type="button" onclick="pgRegister()">Criar minha conta</button>
+      <button class="pg-auth-btn secondary" type="button" onclick="pgShowLogin()">Já tenho uma conta</button>
+    </div>
+  </div>
+</div>
+
+  <!-- DIALOGO PILLGUARD -->
+  <div class="pg-dialog-bg" id="pgDialog" role="dialog" aria-modal="true">
+    <div class="pg-dialog">
+      <div class="pg-dialog-icon" id="pgDialogIcon">⚠️</div>
+      <div class="pg-dialog-title" id="pgDialogTitle">Atenção</div>
+      <div class="pg-dialog-message" id="pgDialogMessage"></div>
+      <div class="pg-dialog-actions" id="pgDialogActions">
+        <button type="button" class="pg-dialog-btn primary" id="pgDialogOk">Entendi</button>
+      </div>
+    </div>
+  </div>
 
 <div class="app">
 
@@ -853,6 +1137,10 @@ button{
           conexão Bluetooth do PillGuard físico.
         </p>
       </div>
+
+      <button class="pg-logout-btn" type="button" onclick="pgLogout()">
+        Sair da conta
+      </button>
 
     </section>
 
@@ -1249,6 +1537,76 @@ button{
 
 
 <script>
+
+
+/* =========================================================
+   LOGIN LOCAL DO PROTOTIPO
+   Observacao: isso cria contas apenas neste aparelho/WebView.
+   Para contas reais entre aparelhos, conectar Firebase/Supabase.
+========================================================= */
+const PG_USERS_KEY = "pillguard_accounts_v1";
+const PG_SESSION_KEY = "pillguard_session_v1";
+
+function pgGetUsers(){
+  try{return JSON.parse(localStorage.getItem(PG_USERS_KEY)||"[]");}
+  catch(e){return []}
+}
+function pgSetUsers(users){localStorage.setItem(PG_USERS_KEY,JSON.stringify(users));}
+function pgNormEmail(v){return String(v||"").trim().toLowerCase();}
+function pgShowError(id,msg){
+  const el=document.getElementById(id); el.textContent=msg; el.classList.add("show");
+}
+function pgClearError(id){document.getElementById(id).classList.remove("show");}
+function pgShowLogin(){
+  document.getElementById("pgLoginView").style.display="block";
+  document.getElementById("pgRegisterView").style.display="none";
+  pgClearError("pgLoginError");
+}
+function pgShowRegister(){
+  document.getElementById("pgLoginView").style.display="none";
+  document.getElementById("pgRegisterView").style.display="block";
+  pgClearError("pgRegisterError");
+}
+function pgEnterApp(user){
+  localStorage.setItem(PG_SESSION_KEY,JSON.stringify(user));
+  document.getElementById("pgAuth").classList.add("hidden");
+  const hello=document.querySelector(".hello");
+  if(hello) hello.textContent="Olá, "+(user.name||"usuário")+"! 👋";
+}
+function pgRegister(){
+  pgClearError("pgRegisterError");
+  const name=document.getElementById("pgRegisterName").value.trim();
+  const email=pgNormEmail(document.getElementById("pgRegisterEmail").value);
+  const pass=document.getElementById("pgRegisterPassword").value;
+  const pass2=document.getElementById("pgRegisterPassword2").value;
+  if(name.length<2){pgShowError("pgRegisterError","Digite seu nome.");return;}
+  if(!email || !email.includes("@")){pgShowError("pgRegisterError","Digite um e-mail válido.");return;}
+  if(pass.length<6){pgShowError("pgRegisterError","A senha precisa ter pelo menos 6 caracteres.");return;}
+  if(pass!==pass2){pgShowError("pgRegisterError","As senhas não são iguais.");return;}
+  const users=pgGetUsers();
+  if(users.some(u=>u.email===email)){pgShowError("pgRegisterError","Já existe uma conta com esse e-mail.");return;}
+  const user={id:uid(),name,email,password:pass};
+  users.push(user); pgSetUsers(users); pgEnterApp(user);
+}
+function pgLogin(){
+  pgClearError("pgLoginError");
+  const email=pgNormEmail(document.getElementById("pgLoginEmail").value);
+  const pass=document.getElementById("pgLoginPassword").value;
+  const user=pgGetUsers().find(u=>u.email===email && u.password===pass);
+  if(!user){pgShowError("pgLoginError","E-mail ou senha incorretos.");return;}
+  pgEnterApp(user);
+}
+function pgLogout(){
+  localStorage.removeItem(PG_SESSION_KEY);
+  document.getElementById("pgAuth").classList.remove("hidden");
+  pgShowLogin();
+}
+function pgInitAuth(){
+  try{
+    const user=JSON.parse(localStorage.getItem(PG_SESSION_KEY)||"null");
+    if(user) pgEnterApp(user);
+  }catch(e){}
+}
 
 /* =========================================================
    DADOS
@@ -2452,6 +2810,87 @@ function escapeHtml(value){
 
 
 /* =========================================================
+   DIALOGOS PILLGUARD
+
+   Usa HTML/CSS em vez de alert()/confirm() do navegador.
+   Assim o WebView não mostra a URL do GitHub.
+========================================================= */
+
+let pillGuardDialogAction = null;
+
+function closePillDialog(){
+
+  document
+    .getElementById("pgDialog")
+    .classList.remove("show");
+
+  pillGuardDialogAction = null;
+}
+
+function showPillAlert(title, message, icon = "⚠️"){
+
+  const bg = document.getElementById("pgDialog");
+  const actions = document.getElementById("pgDialogActions");
+  const ok = document.getElementById("pgDialogOk");
+
+  document.getElementById("pgDialogIcon").textContent = icon;
+  document.getElementById("pgDialogTitle").textContent = title;
+  document.getElementById("pgDialogMessage").textContent = message;
+
+  actions.className = "pg-dialog-actions";
+  actions.innerHTML = "";
+
+  ok.textContent = "Entendi";
+  ok.className = "pg-dialog-btn primary";
+  ok.onclick = closePillDialog;
+  actions.appendChild(ok);
+
+  bg.classList.add("show");
+}
+
+function showPillConfirm(title, message, onConfirm){
+
+  const bg = document.getElementById("pgDialog");
+  const actions = document.getElementById("pgDialogActions");
+  const ok = document.getElementById("pgDialogOk");
+
+  document.getElementById("pgDialogIcon").textContent = "🗑️";
+  document.getElementById("pgDialogTitle").textContent = title;
+  document.getElementById("pgDialogMessage").textContent = message;
+
+  actions.className = "pg-dialog-actions two";
+
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "pg-dialog-btn secondary";
+  cancel.textContent = "Cancelar";
+  cancel.onclick = closePillDialog;
+
+  ok.textContent = "Excluir";
+  ok.className = "pg-dialog-btn primary";
+  ok.onclick = function(){
+    closePillDialog();
+    if(typeof onConfirm === "function")
+      onConfirm();
+  };
+
+  actions.innerHTML = "";
+  actions.appendChild(cancel);
+  actions.appendChild(ok);
+
+  bg.classList.add("show");
+}
+
+/* Fecha o dialogo ao tocar no fundo */
+document
+  .getElementById("pgDialog")
+  .addEventListener("click", function(event){
+    if(event.target === this)
+      closePillDialog();
+  });
+
+
+/* =========================================================
    ABRIR ADICIONAR
 ========================================================= */
 
@@ -2624,39 +3063,40 @@ function deleteMedication(id){
   if(!med)
     return;
 
-  const confirmed =
-    window.confirm(
-      `Tem certeza que deseja excluir o medicamento "${med.name}"?`
-    );
+  showPillConfirm(
+    "Excluir medicamento?",
+    `Tem certeza que deseja excluir o medicamento "${med.name}"?`,
+    () => {
 
-  if(!confirmed)
-    return;
+      /*
+        Remove medicamento
+      */
 
-  /*
-    Remove medicamento
-  */
+      state.meds =
+        state.meds.filter(
+          m => m.id !== id
+        );
 
-  state.meds =
-    state.meds.filter(
-      m => m.id !== id
-    );
+      /*
+        Remove também o histórico
+        daquele medicamento.
+      */
 
-  /*
-    Remove também o histórico
-    daquele medicamento.
-  */
+      state.history =
+        state.history.filter(
+          h => h.medId !== id
+        );
 
-  state.history =
-    state.history.filter(
-      h => h.medId !== id
-    );
+      saveState();
 
-  saveState();
+      render();
 
-  render();
-
-  alert(
-    "Medicamento excluído com sucesso."
+      showPillAlert(
+        "Medicamento excluído",
+        "O medicamento foi excluído com sucesso.",
+        "🗑️"
+      );
+    }
   );
 }
 
@@ -2695,8 +3135,10 @@ document
 
       if(!name){
 
-        alert(
-          "Digite o nome do medicamento."
+        showPillAlert(
+          "Nome do medicamento",
+          "Digite o nome do medicamento.",
+          "💊"
         );
 
         return;
@@ -2704,8 +3146,10 @@ document
 
       if(!amount || amount <= 0){
 
-        alert(
-          "Digite uma quantidade válida."
+        showPillAlert(
+          "Quantidade inválida",
+          "Digite uma quantidade válida.",
+          "⚠️"
         );
 
         return;
@@ -2713,8 +3157,10 @@ document
 
       if(!startTime){
 
-        alert(
-          "Escolha o horário inicial."
+        showPillAlert(
+          "Horário inicial",
+          "Escolha o horário inicial.",
+          "⏰"
         );
 
         return;
@@ -2722,8 +3168,10 @@ document
 
       if(!days.length){
 
-        alert(
-          "Selecione pelo menos um dia."
+        showPillAlert(
+          "Dias não selecionados",
+          "Selecione pelo menos um dia.",
+          "📅"
         );
 
         return;
@@ -2769,8 +3217,10 @@ document
             (intervalHours === 0 && intervalMinutesValue === 0)
           ){
 
-            alert(
-              "Digite um intervalo válido, por exemplo 3 horas e 30 minutos."
+            showPillAlert(
+              "Intervalo inválido",
+              "Informe um intervalo maior que zero.\nEx.: 10 minutos ou 3h 30min.",
+              "⏱️"
             );
 
             return;
@@ -2778,8 +3228,10 @@ document
 
           if(intervalHours > 24){
 
-            alert(
-              "Para horas + minutos, use no máximo 24 horas."
+            showPillAlert(
+              "Intervalo muito grande",
+              "Para horas + minutos, use no máximo 24 horas.",
+              "⏱️"
             );
 
             return;
@@ -2799,8 +3251,10 @@ document
             intervalValue < 1
           ){
 
-            alert(
-              "Digite um intervalo válido."
+            showPillAlert(
+              "Intervalo inválido",
+              "Informe um intervalo maior que zero.\nEx.: 10 minutos ou 5 horas.",
+              "⏱️"
             );
 
             return;
@@ -2811,8 +3265,10 @@ document
             intervalValue > 1440
           ){
 
-            alert(
-              "Para minutos, use no máximo 1440 minutos."
+            showPillAlert(
+              "Intervalo muito grande",
+              "Para minutos, use no máximo 1440 minutos.",
+              "⏱️"
             );
 
             return;
@@ -2823,8 +3279,10 @@ document
             intervalValue > 24
           ){
 
-            alert(
-              "Para horas, use no máximo 24 horas."
+            showPillAlert(
+              "Intervalo muito grande",
+              "Para horas, use no máximo 24 horas.",
+              "⏱️"
             );
 
             return;
@@ -2853,8 +3311,10 @@ document
 
         if(!customTimes.length){
 
-          alert(
-            "Adicione pelo menos um horário."
+          showPillAlert(
+            "Horário não informado",
+            "Adicione pelo menos um horário.",
+            "⏰"
           );
 
           return;
@@ -3240,8 +3700,10 @@ function openTakeModal(
     minutesNow()
   ){
 
-    alert(
-      `Ainda não chegou o horário de tomar ${med.name}.`
+    showPillAlert(
+      "Ainda não chegou a hora",
+      `Ainda não chegou o horário de tomar ${med.name}.`,
+      "⏰"
     );
 
     return;
@@ -3351,8 +3813,10 @@ function confirmTake(){
     )
   ){
 
-    alert(
-      "Ainda não chegou o horário programado."
+    showPillAlert(
+      "Ainda não chegou a hora",
+      "Ainda não chegou o horário programado.",
+      "⏰"
     );
 
     return;
@@ -3390,8 +3854,10 @@ function confirmTake(){
     )
   ){
 
-    alert(
-      "Esse horário já foi registrado."
+    showPillAlert(
+      "Horário já registrado",
+      "Esse horário já foi registrado.",
+      "✅"
     );
 
     closeTakeModal();
@@ -3536,6 +4002,7 @@ document
    INICIO
 ========================================================= */
 
+pgInitAuth();
 render();
 
 </script>
@@ -3557,5 +4024,7 @@ if ("serviceWorker" in navigator) {
     });
 }
 </script>
+
+
 </body>
   </html>
