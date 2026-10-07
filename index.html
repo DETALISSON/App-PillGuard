@@ -1048,12 +1048,42 @@ button{
             >
               <option value="minutes">Minutos</option>
               <option value="hours">Horas</option>
+              <option value="hours_minutes">Horas + minutos</option>
             </select>
 
           </div>
 
+          <div
+            id="combinedIntervalBox"
+            style="display:none;margin-top:10px"
+          >
+            <div class="interval-row">
+
+              <input
+                class="form-input"
+                id="intervalHours"
+                type="number"
+                min="0"
+                max="24"
+                step="1"
+                placeholder="Horas"
+              >
+
+              <input
+                class="form-input"
+                id="intervalMinutes"
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                placeholder="Minutos"
+              >
+
+            </div>
+          </div>
+
           <small style="display:block;color:#7a8799;margin-top:7px">
-            Exemplos: a cada 10 minutos, 30 minutos, 5 horas ou 7 horas.
+            Exemplos: a cada 10 minutos, 5 horas ou 3 horas e 30 minutos.
           </small>
 
         </div>
@@ -1442,6 +1472,20 @@ function minutesToTime(total){
 
 function intervalMinutes(med){
 
+  if(med.intervalUnit === "hours_minutes"){
+
+    const hours =
+      Number(med.intervalHours || 0);
+
+    const minutes =
+      Number(med.intervalMinutes || 0);
+
+    return (
+      hours * 60 +
+      minutes
+    );
+  }
+
   if(!med.intervalValue)
     return 0;
 
@@ -1514,7 +1558,6 @@ function getTimesForDate(med, date){
   /*
     HORÁRIO ESPECÍFICO
   */
-
   if(med.freq === "once"){
 
     result.push(med.startTime);
@@ -1526,7 +1569,6 @@ function getTimesForDate(med, date){
   /*
     HORÁRIOS PERSONALIZADOS
   */
-
   if(med.freq === "custom"){
 
     return [...(med.customTimes || [])]
@@ -1537,25 +1579,14 @@ function getTimesForDate(med, date){
   /*
     INTERVALO CONTÍNUO
 
-    Aqui está a parte importante:
+    Regra importante:
+    depois que a pessoa registra "Tomei",
+    o próximo horário passa a ser calculado
+    a partir do horário REAL em que ela tomou.
 
-    Se o usuário colocar:
-
-    08:00
-    a cada 7 horas
-
-    o sistema continua:
-
-    08:00
-    15:00
-    22:00
-    05:00
-    12:00
-    19:00
-    02:00
-    ...
-
-    sem reiniciar o ciclo à meia-noite.
+    Exemplo:
+    11:58 + 10h = 21:58
+    21:58 + 10h = 07:58
   */
 
   const interval =
@@ -1564,21 +1595,64 @@ function getTimesForDate(med, date){
   if(interval <= 0)
     return [];
 
-  const anchor =
-    med.anchorDate || dateKey();
+  let anchorDate;
+  let anchorMinutes;
+  let firstOccurrenceOffset = 0;
 
-  const anchorParts =
-    anchor.split("-").map(Number);
+  /*
+    Procura a última tomada REAL.
+    O createdAt é o instante do relógio
+    do próprio celular no momento da confirmação.
+  */
+  const lastTaken =
+    [...state.history]
+      .filter(item => item.medId === med.id)
+      .sort(
+        (a,b) =>
+          new Date(b.createdAt) -
+          new Date(a.createdAt)
+      )[0];
 
-  const anchorDate =
-    new Date(
-      anchorParts[0],
-      anchorParts[1]-1,
-      anchorParts[2]
-    );
+  if(lastTaken && lastTaken.createdAt){
 
-  const anchorMinutes =
-    timeToMinutes(med.startTime);
+    const takenDate =
+      new Date(lastTaken.createdAt);
+
+    anchorDate =
+      new Date(
+        takenDate.getFullYear(),
+        takenDate.getMonth(),
+        takenDate.getDate()
+      );
+
+    anchorMinutes =
+      takenDate.getHours() * 60 +
+      takenDate.getMinutes();
+
+    /*
+      A tomada já aconteceu.
+      Portanto, não repetimos o mesmo horário.
+    */
+    firstOccurrenceOffset = 1;
+
+  }else{
+
+    const anchor =
+      med.anchorDate || dateKey();
+
+    const parts =
+      anchor.split("-").map(Number);
+
+    anchorDate =
+      new Date(
+        parts[0],
+        parts[1]-1,
+        parts[2]
+      );
+
+    anchorMinutes =
+      timeToMinutes(med.startTime);
+  }
 
   const targetStart =
     new Date(
@@ -1587,16 +1661,9 @@ function getTimesForDate(med, date){
       date.getDate()
     );
 
-  const anchorStart =
-    new Date(
-      anchorDate.getFullYear(),
-      anchorDate.getMonth(),
-      anchorDate.getDate()
-    );
-
   const difference =
     Math.floor(
-      (targetStart - anchorStart) /
+      (targetStart - anchorDate) /
       60000
     );
 
@@ -1612,8 +1679,8 @@ function getTimesForDate(med, date){
       interval
     );
 
-  if(k < 0)
-    k = 0;
+  if(k < firstOccurrenceOffset)
+    k = firstOccurrenceOffset;
 
   while(true){
 
@@ -1636,16 +1703,12 @@ function getTimesForDate(med, date){
 
     k++;
 
-    /*
-      Proteção para intervalos estranhos.
-    */
     if(result.length > 200)
       break;
   }
 
   return result;
 }
-
 
 /* =========================================================
    HORARIOS DE HOJE
@@ -1799,6 +1862,17 @@ function frequencyText(med){
   if(med.freq === "custom")
     return "Horários personalizados";
 
+  if(med.intervalUnit === "hours_minutes"){
+
+    const h =
+      Number(med.intervalHours || 0);
+
+    const min =
+      Number(med.intervalMinutes || 0);
+
+    return `A cada ${h}h ${String(min).padStart(2,"0")}min`;
+  }
+
   const value =
     Number(med.intervalValue);
 
@@ -1817,7 +1891,6 @@ function frequencyText(med){
 
   return `A cada ${value} ${unit}`;
 }
-
 
 /* =========================================================
    PROXIMO MEDICAMENTO
@@ -2400,6 +2473,20 @@ function openAddModal(){
   selectedType = "pill";
   selectedFreq = "once";
 
+  document.getElementById("intervalValue")
+    .value = "";
+
+  document.getElementById("intervalHours")
+    .value = "";
+
+  document.getElementById("intervalMinutes")
+    .value = "";
+
+  document.getElementById("intervalUnit")
+    .value = "hours";
+
+  updateCombinedIntervalVisibility();
+
   selectType("pill");
   selectFreq("once");
 
@@ -2480,6 +2567,16 @@ function editMedication(id){
   document.getElementById("intervalUnit")
     .value =
       med.intervalUnit || "hours";
+
+  document.getElementById("intervalHours")
+    .value =
+      med.intervalHours || "";
+
+  document.getElementById("intervalMinutes")
+    .value =
+      med.intervalMinutes || "";
+
+  updateCombinedIntervalVisibility();
 
   document.getElementById("startTime")
     .value =
@@ -2639,55 +2736,99 @@ document
 
       let intervalValue = null;
       let intervalUnit = null;
+      let intervalHours = null;
+      let intervalMinutesValue = null;
 
       if(selectedFreq === "interval"){
-
-        intervalValue =
-          Number(
-            document.getElementById(
-              "intervalValue"
-            ).value
-          );
 
         intervalUnit =
           document.getElementById(
             "intervalUnit"
           ).value;
 
-        if(
-          !intervalValue ||
-          intervalValue < 1
-        ){
+        if(intervalUnit === "hours_minutes"){
 
-          alert(
-            "Digite um intervalo válido."
-          );
+          intervalHours =
+            Number(
+              document.getElementById(
+                "intervalHours"
+              ).value || 0
+            );
 
-          return;
-        }
+          intervalMinutesValue =
+            Number(
+              document.getElementById(
+                "intervalMinutes"
+              ).value || 0
+            );
 
-        if(
-          intervalUnit === "minutes" &&
-          intervalValue > 1440
-        ){
+          if(
+            intervalHours < 0 ||
+            intervalMinutesValue < 0 ||
+            intervalMinutesValue > 59 ||
+            (intervalHours === 0 && intervalMinutesValue === 0)
+          ){
 
-          alert(
-            "Para minutos, use no máximo 1440 minutos."
-          );
+            alert(
+              "Digite um intervalo válido, por exemplo 3 horas e 30 minutos."
+            );
 
-          return;
-        }
+            return;
+          }
 
-        if(
-          intervalUnit === "hours" &&
-          intervalValue > 24
-        ){
+          if(intervalHours > 24){
 
-          alert(
-            "Para horas, use no máximo 24 horas."
-          );
+            alert(
+              "Para horas + minutos, use no máximo 24 horas."
+            );
 
-          return;
+            return;
+          }
+
+        }else{
+
+          intervalValue =
+            Number(
+              document.getElementById(
+                "intervalValue"
+              ).value
+            );
+
+          if(
+            !intervalValue ||
+            intervalValue < 1
+          ){
+
+            alert(
+              "Digite um intervalo válido."
+            );
+
+            return;
+          }
+
+          if(
+            intervalUnit === "minutes" &&
+            intervalValue > 1440
+          ){
+
+            alert(
+              "Para minutos, use no máximo 1440 minutos."
+            );
+
+            return;
+          }
+
+          if(
+            intervalUnit === "hours" &&
+            intervalValue > 24
+          ){
+
+            alert(
+              "Para horas, use no máximo 24 horas."
+            );
+
+            return;
+          }
         }
       }
 
@@ -2750,6 +2891,11 @@ document
         intervalValue,
 
         intervalUnit,
+
+        intervalHours,
+
+        intervalMinutes:
+          intervalMinutesValue,
 
         startTime,
 
@@ -2851,30 +2997,63 @@ function updatePreview(){
 
   else if(selectedFreq === "interval"){
 
-    const value =
-      Number(
-        document.getElementById(
-          "intervalValue"
-        ).value
-      );
-
     const unit =
       document.getElementById(
         "intervalUnit"
       ).value;
 
-    if(!value){
+    let interval = 0;
+
+    if(unit === "hours_minutes"){
+
+      const hours =
+        Number(
+          document.getElementById(
+            "intervalHours"
+          ).value || 0
+        );
+
+      const minutes =
+        Number(
+          document.getElementById(
+            "intervalMinutes"
+          ).value || 0
+        );
+
+      interval =
+        hours * 60 +
+        minutes;
+
+    }else{
+
+      const value =
+        Number(
+          document.getElementById(
+            "intervalValue"
+          ).value
+        );
+
+      if(!value){
+
+        box.innerHTML =
+          "Digite o intervalo.";
+
+        return;
+      }
+
+      interval =
+        unit === "hours"
+          ? value * 60
+          : value;
+    }
+
+    if(interval <= 0){
 
       box.innerHTML =
-        "Digite o intervalo.";
+        "Digite um intervalo válido.";
 
       return;
     }
-
-    const interval =
-      unit === "hours"
-        ? value * 60
-        : value;
 
     let current =
       timeToMinutes(startTime);
@@ -2936,6 +3115,46 @@ function updatePreview(){
 }
 
 
+function updateCombinedIntervalVisibility(){
+
+  const unit =
+    document.getElementById(
+      "intervalUnit"
+    ).value;
+
+  const box =
+    document.getElementById(
+      "combinedIntervalBox"
+    );
+
+  const simple =
+    document.getElementById(
+      "intervalValue"
+    );
+
+  const combined =
+    unit === "hours_minutes";
+
+  box.style.display =
+    combined ? "block" : "none";
+
+  simple.style.display =
+    combined ? "none" : "block";
+
+  if(combined){
+
+    document.getElementById(
+      "intervalHours"
+    ).disabled = false;
+
+    document.getElementById(
+      "intervalMinutes"
+    ).disabled = false;
+
+  }
+}
+
+
 /* =========================================================
    ATUALIZAR PREVISAO AO DIGITAR
 ========================================================= */
@@ -2951,6 +3170,25 @@ document
   .getElementById("intervalUnit")
   .addEventListener(
     "change",
+    () => {
+
+      updateCombinedIntervalVisibility();
+      updatePreview();
+
+    }
+  );
+
+document
+  .getElementById("intervalHours")
+  .addEventListener(
+    "input",
+    updatePreview
+  );
+
+document
+  .getElementById("intervalMinutes")
+  .addEventListener(
+    "input",
     updatePreview
   );
 
@@ -3301,7 +3539,6 @@ document
 render();
 
 </script>
-
 <script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
@@ -3321,4 +3558,4 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 </body>
-</html>
+  </html>
