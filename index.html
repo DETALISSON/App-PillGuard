@@ -200,6 +200,14 @@ button{
   box-shadow:0 7px 20px rgba(20,40,80,.05);
 }
 
+.schedule-time small{
+  display:block;
+  margin-top:2px;
+  font-size:10px;
+  font-weight:700;
+  color:var(--muted);
+}
+
 .schedule-time{
   width:66px;
   font-size:18px;
@@ -1119,7 +1127,7 @@ button{
       </div>
 
       <div class="section-title">
-        Horários de hoje
+        Próximos 4 horários
       </div>
 
       <div id="todayList"></div>
@@ -2548,17 +2556,105 @@ function getTomorrowSchedule(){
 
 
 /* =========================================================
+   PRÓXIMOS 4 HORÁRIOS
+========================================================= */
+
+function getNextFourSchedules(){
+
+  const current = now();
+  const currentDateKey = dateKey();
+  const result = [];
+
+  /*
+    Procuramos os próximos horários em vários dias.
+    Horários vencidos e ainda não tomados continuam
+    aparecendo primeiro, pois ainda precisam ser
+    confirmados pelo usuário.
+  */
+  for(let offset = 0; offset < 31 && result.length < 4; offset++){
+
+    const date = new Date(
+      current.getFullYear(),
+      current.getMonth(),
+      current.getDate() + offset
+    );
+
+    const daySchedules = [];
+
+    state.meds.forEach(med => {
+
+      const times = getTimesForDate(med, date);
+
+      times.forEach(time => {
+
+        const scheduleDate =
+          date.getFullYear() + "-" +
+          String(date.getMonth() + 1).padStart(2,"0") + "-" +
+          String(date.getDate()).padStart(2,"0");
+
+        const taken = isTaken(
+          med.id,
+          scheduleDate,
+          time
+        );
+
+        if(!taken){
+          daySchedules.push({
+            med,
+            time,
+            scheduleDate,
+            offset
+          });
+        }
+      });
+    });
+
+    daySchedules.sort((a,b) =>
+      timeToMinutes(a.time) - timeToMinutes(b.time)
+    );
+
+    result.push(...daySchedules);
+  }
+
+  /*
+    Para o dia atual, mantemos primeiro os horários
+    que já chegaram e ainda não foram marcados como
+    tomados. Depois vêm os próximos horários futuros.
+  */
+  if(result.length){
+    result.sort((a,b) => {
+      if(a.offset !== b.offset) return a.offset - b.offset;
+      return timeToMinutes(a.time) - timeToMinutes(b.time);
+    });
+  }
+
+  return result.slice(0,4);
+}
+
+function isScheduleAvailable(item){
+
+  if(item.scheduleDate !== dateKey())
+    return false;
+
+  return isTimeAvailable(item.time);
+}
+
+
+/* =========================================================
    RENDER HOME
 ========================================================= */
 
 function renderHome(){
 
-  const schedules =
+  const todaySchedules =
     getTodaySchedules();
+
+  const schedules =
+    getNextFourSchedules();
 
   let taken = 0;
 
-  schedules.forEach(item => {
+  todaySchedules.forEach(item => {
 
     if(
       isTaken(
@@ -2576,13 +2672,13 @@ function renderHome(){
     .textContent = taken;
 
   document.getElementById("totalCount")
-    .textContent = schedules.length;
+    .textContent = todaySchedules.length;
 
   document.getElementById("pendingCount")
     .textContent =
       Math.max(
         0,
-        schedules.length - taken
+        todaySchedules.length - taken
       );
 
 
@@ -2674,7 +2770,7 @@ function renderHome(){
 
 
   /*
-    LISTA DE HOJE
+    PRÓXIMOS 4 HORÁRIOS
   */
 
   const list =
@@ -2686,7 +2782,7 @@ function renderHome(){
 
     list.innerHTML = `
       <div class="empty">
-        Nenhum medicamento programado para hoje.
+        Nenhum próximo horário programado.
       </div>
     `;
 
@@ -2700,12 +2796,12 @@ function renderHome(){
     const takenNow =
       isTaken(
         item.med.id,
-        dateKey(),
+        item.scheduleDate,
         item.time
       );
 
     const available =
-      isTimeAvailable(item.time);
+      isScheduleAvailable(item);
 
     const div =
       document.createElement("div");
@@ -2738,7 +2834,14 @@ function renderHome(){
 
     div.innerHTML = `
       <div class="schedule-time">
-        ${item.time}
+        <div>${item.time}</div>
+        <small>${
+          item.scheduleDate === dateKey()
+            ? "Hoje"
+            : item.offset === 1
+              ? "Amanhã"
+              : item.scheduleDate.split("-").reverse().join("/")
+        }</small>
       </div>
 
       <div class="dot"></div>
