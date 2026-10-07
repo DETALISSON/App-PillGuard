@@ -564,6 +564,66 @@ button{
   font-weight:800;
 }
 
+.alert-mode-grid{
+  display:grid;
+  gap:10px;
+  margin-top:8px;
+}
+
+.alert-mode-option{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+  padding:13px;
+  border:2px solid #e4ebf2;
+  border-radius:16px;
+  background:#fff;
+  color:#17243a;
+  cursor:pointer;
+  transition:.18s ease;
+}
+
+.alert-mode-option:hover{
+  border-color:#a9d9ec;
+}
+
+.alert-mode-option.selected{
+  border-color:var(--blue);
+  background:#effaff;
+  box-shadow:0 5px 16px rgba(8,123,167,.10);
+}
+
+.alert-mode-icon{
+  width:43px;
+  height:43px;
+  min-width:43px;
+  border-radius:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#edf5fa;
+  font-size:22px;
+}
+
+.alert-mode-option.selected .alert-mode-icon{
+  background:#dff5fd;
+}
+
+.alert-mode-option strong{
+  display:block;
+  font-size:14px;
+  margin-bottom:3px;
+}
+
+.alert-mode-option small{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.35;
+}
+
 .preview{
   background:#f3f7fb;
   border-radius:15px;
@@ -1447,6 +1507,60 @@ button{
         </div>
 
 
+        <!-- MODO DE ALERTA -->
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Como deseja ser avisado?
+          </label>
+
+          <div class="alert-mode-grid">
+
+            <button
+              type="button"
+              class="alert-mode-option selected"
+              data-alert="notification"
+              onclick="selectAlertMode('notification')"
+            >
+              <div class="alert-mode-icon">📱</div>
+              <div>
+                <strong>Somente notificação</strong>
+                <small>Receba uma notificação no celular.</small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="alert-mode-option"
+              data-alert="vibration"
+              onclick="selectAlertMode('vibration')"
+            >
+              <div class="alert-mode-icon">📳</div>
+              <div>
+                <strong>Alarme com vibração</strong>
+                <small>O celular vibra até você desligar.</small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="alert-mode-option"
+              data-alert="alarm"
+              onclick="selectAlertMode('alarm')"
+            >
+              <div class="alert-mode-icon">🔊</div>
+              <div>
+                <strong>Alarme completo</strong>
+                <small>Toca e vibra até você desligar.</small>
+              </div>
+            </button>
+
+          </div>
+
+        </div>
+
+
         <!-- PREVISAO -->
 
         <div class="preview">
@@ -1619,8 +1733,16 @@ let state = JSON.parse(
   '{"meds":[],"history":[]}'
 );
 
+/* Medicamentos antigos recebem o modo padrão de notificação. */
+if(Array.isArray(state.meds)){
+  state.meds.forEach(med => {
+    if(!med.alertMode) med.alertMode = "notification";
+  });
+}
+
 let selectedType = "pill";
 let selectedFreq = "once";
+let selectedAlertMode = "notification";
 let takeData = null;
 
 
@@ -1633,6 +1755,72 @@ function saveState(){
     STORAGE_KEY,
     JSON.stringify(state)
   );
+}
+
+
+/* =========================================================
+   MODO DE ALERTA
+========================================================= */
+
+function selectAlertMode(mode){
+
+  selectedAlertMode =
+    ["notification","vibration","alarm"].includes(mode)
+      ? mode
+      : "notification";
+
+  document
+    .querySelectorAll(".alert-mode-option")
+    .forEach(btn => {
+      btn.classList.toggle(
+        "selected",
+        btn.dataset.alert === selectedAlertMode
+      );
+    });
+}
+
+
+/* =========================================================
+   COMUNICACAO COM KODULAR / APP INVENTOR
+========================================================= */
+
+function sendToKodular(payload){
+
+  try{
+
+    const message =
+      JSON.stringify(payload);
+
+    if(
+      window.AppInventor &&
+      typeof window.AppInventor.setWebViewString === "function"
+    ){
+      window.AppInventor.setWebViewString(message);
+      return true;
+    }
+
+    if(
+      window.Kodular &&
+      typeof window.Kodular.setWebViewString === "function"
+    ){
+      window.Kodular.setWebViewString(message);
+      return true;
+    }
+
+  }catch(error){}
+
+  return false;
+}
+
+
+function notifyKodularMedicationSaved(med, action){
+
+  sendToKodular({
+    acao: action || "salvar_medicamento",
+    medicamento: med,
+    horariosHoje: getTimesForDate(med, now()),
+    modoAlerta: med.alertMode || "notification"
+  });
 }
 
 
@@ -2911,6 +3099,7 @@ function openAddModal(){
 
   selectedType = "pill";
   selectedFreq = "once";
+  selectedAlertMode = "notification";
 
   document.getElementById("intervalValue")
     .value = "";
@@ -2928,6 +3117,7 @@ function openAddModal(){
 
   selectType("pill");
   selectFreq("once");
+  selectAlertMode("notification");
 
   document.getElementById("customTimes")
     .innerHTML = "";
@@ -2997,6 +3187,10 @@ function editMedication(id){
 
   selectFreq(
     med.freq || "once"
+  );
+
+  selectAlertMode(
+    med.alertMode || "notification"
   );
 
   document.getElementById("intervalValue")
@@ -3086,6 +3280,12 @@ function deleteMedication(id){
         state.history.filter(
           h => h.medId !== id
         );
+
+      sendToKodular({
+        acao: "cancelar_medicamento",
+        medicamentoId: id,
+        medicamento: med.name
+      });
 
       saveState();
 
@@ -3363,6 +3563,10 @@ document
 
         days,
 
+        alertMode:
+          selectedAlertMode ||
+          "notification",
+
         /*
           O ciclo contínuo começa
           no dia em que o medicamento
@@ -3404,6 +3608,11 @@ document
 
 
       saveState();
+
+      notifyKodularMedicationSaved(
+        medication,
+        editId ? "atualizar_medicamento" : "agendar_medicamento"
+      );
 
       closeMedModal();
 
